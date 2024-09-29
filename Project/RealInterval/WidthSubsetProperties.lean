@@ -1,4 +1,4 @@
-import Project.RealInterval.RealNumberIntervalOperations
+import Project.RealInterval.Basic
 import Mathlib.Tactic.Linarith
 
 namespace RealInterval

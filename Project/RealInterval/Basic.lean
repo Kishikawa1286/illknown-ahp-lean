@@ -40,6 +40,18 @@ instance : Nonempty Interval :=
       exact le_refl 0
   }⟩
 
+-- Subset or equal relation for intervals
+-- Let x := [xᴸ, xᵁ] and y := [yᴸ, yᵁ]
+-- If yᴸ ≤ xᴸ, xᵁ ≤ yᵁ holds, then x ⊆ y
+instance : HasSubset Interval :=
+  ⟨λ x y ↦ y.inf ≤ x.inf ∧ x.sup ≤ y.sup⟩
+
+-- Strict subset relation for intervals (excluding equality)
+-- Let x := [xᴸ, xᵁ] and y := [yᴸ, yᵁ]
+-- If yᴸ ≤ xᴸ, xᵁ ≤ yᵁ and x ≠ y holds, then x ⊂ y
+instance : HasSSubset Interval :=
+  ⟨λ x y ↦ x ⊆ y ∧ ¬(x == y)⟩
+
 -- Check if an interval is a singleton
 def is_singleton (x : Interval) : Prop :=
   x.inf == x.sup
