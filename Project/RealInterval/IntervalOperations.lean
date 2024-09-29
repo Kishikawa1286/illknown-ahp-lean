@@ -1,12 +1,11 @@
 import Project.RealInterval.Basic
--- `one_div_le_one_div_of_le` and `one_div_le_one_div_of_le_of_neg` are used in invIntervals
+-- `one_div_le_one_div_of_le` and `one_div_le_one_div_of_le_of_neg` are used in inv_intervals
 import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic
 
 namespace RealInterval
 
 -- Addition of intervals
-def addIntervals (x y : Interval) : Interval :=
+def add_intervals (x y : Interval) : Interval :=
   {
     inf := x.inf + y.inf,
     sup := x.sup + y.sup,
@@ -14,12 +13,11 @@ def addIntervals (x y : Interval) : Interval :=
       exact add_le_add x.inf_leq_sup y.inf_leq_sup
   }
 
--- Assign the operator + to addIntervals
 instance : Add Interval where
-  add := addIntervals
+  add := add_intervals
 
 -- Additive inverse of an interval
-def negIntervals (x : Interval) : Interval :=
+def neg_interval (x : Interval) : Interval :=
   {
     inf := -x.sup,
     sup := -x.inf,
@@ -28,7 +26,7 @@ def negIntervals (x : Interval) : Interval :=
   }
 
 instance : Neg Interval where
-  neg := negIntervals
+  neg := neg_interval
 
 instance : Zero Interval where
   zero := {
@@ -39,14 +37,14 @@ instance : Zero Interval where
   }
 
 -- Subtraction of intervals
-def subIntervals (x y : Interval) : Interval :=
+def sub_intervals (x y : Interval) : Interval :=
   x + -y
 
 instance : Sub Interval where
-  sub := subIntervals
+  sub := sub_intervals
 
 -- Multiplication of intervals
-noncomputable def mulIntervals (x y : Interval) : Interval :=
+noncomputable def mul_intervals (x y : Interval) : Interval :=
   {
     inf := min (min (x.inf * y.inf) (x.inf * y.sup)) (min (x.sup * y.inf) (x.sup * y.sup)),
     sup := max (max (x.inf * y.inf) (x.inf * y.sup)) (max (x.sup * y.inf) (x.sup * y.sup)),
@@ -69,43 +67,63 @@ noncomputable def mulIntervals (x y : Interval) : Interval :=
       exact le_trans h₁ (le_trans h₂ (le_trans h₃ h₄))
   }
 
--- Assign the operator * to mulIntervals
+-- Assign the operator * to mul_intervals
 noncomputable instance : Mul Interval where
-  mul := mulIntervals
-
--- Proof that 1 / a ≤ 1 / b when a ≤ b and b < 0
-lemma one_div_le_one_div_of_le_of_neg {a b : ℝ} (hb : b < 0) (hab : a ≤ b) : (1 / a) ≤ (1 / b) :=
-  have ha : a < 0 := lt_of_le_of_lt hab hb
-  rw [← one_div_neg_eq_neg_one_div a, ← one_div_neg_eq_neg_one_div b]
-  exact one_div_le_one_div_of_le_of_neg hb hab
+  mul := mul_intervals
 
 -- Multiplicative inverse of an interval
-noncomputable def invIntervals (x : Interval) : Interval :=
+noncomputable def inv_interval (x : Interval) : Interval :=
   if h₁ : 0 < x.inf then
-    -- In case that x.inf > 0
+    -- In case that `x.inf > 0`
     {
       inf := 1 / x.sup,
       sup := 1 / x.inf,
       inf_leq_sup := by
         have h_inf_pos : 0 < x.inf := h₁
-        have h_sup_pos : 0 < x.sup := lt_of_lt_of_le h_inf_pos x.inf_leq_sup
         have h_div : (1 / x.sup) ≤ (1 / x.inf) := one_div_le_one_div_of_le h_inf_pos x.inf_leq_sup
         exact h_div
     }
   else if h₂ : x.sup < 0 then
-    -- In case that x.sup < 0
+    -- In case that `x.sup < 0`
     {
-      inf := 1 / x.inf,
-      sup := 1 / x.sup,
+      inf := 1 / x.sup,
+      sup := 1 / x.inf,
       inf_leq_sup := by
         have h_sup_neg : x.sup < 0 := h₂
-        have h_inf_neg : x.inf < 0 := lt_of_le_of_lt x.inf_leq_sup h_sup_neg
-        have h_neg_inf : x.inf ≤ x.sup := x.inf_leq_sup
-        have h_div : (1 / x.inf) ≤ (1 / x.sup) := one_div_le_one_div_of_le_of_neg h_sup_neg h_neg_inf
+        have neg_sup_pos : 0 < -x.sup := neg_pos.mpr h_sup_neg
+        have neg_inf_leq_neg_sup : -x.sup ≤ -x.inf := neg_le_neg x.inf_leq_sup
+
+        have h_neg_div : -(1 / x.inf) ≤ -(1 / x.sup) := by
+          have h_div_neg_inf : 1 / (-x.inf) = -(1 / x.inf) := one_div_neg_eq_neg_one_div x.inf
+          have h_div_neg_sup : 1 / (-x.sup) = -(1 / x.sup) := one_div_neg_eq_neg_one_div x.sup
+          rw [←h_div_neg_inf, ←h_div_neg_sup]
+          exact one_div_le_one_div_of_le neg_sup_pos neg_inf_leq_neg_sup
+
+        have h_div : (1 / x.sup) ≤ (1 / x.inf) := by
+          rw [←neg_neg (1 / x.sup), ←neg_neg (1 / x.inf)]
+          exact neg_le_neg h_neg_div
+
         exact h_div
     }
   else
-    -- In case that 0 ∈ x, the inverse is undefined
-    throw $ IO.userError "Inverse is undefined when at least one of the interval bounds is 0"
+    -- In case that `x.inf ≤ 0 ≤ x.sup`
+    -- This case is zero division, so we set the result to zero singleton interval
+    {
+      inf := 0,
+      sup := 0,
+      inf_leq_sup := by
+        exact le_refl 0
+    }
+
+noncomputable instance : Inv Interval where
+  inv := inv_interval
+
+instance : One Interval where
+  one := {
+    inf := 1,
+    sup := 1,
+    inf_leq_sup := by
+      exact le_refl 1
+  }
 
 end RealInterval
