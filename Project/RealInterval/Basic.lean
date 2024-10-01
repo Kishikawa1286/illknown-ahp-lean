@@ -27,6 +27,17 @@ noncomputable instance : DecidableEq Interval :=
         apply h
         exact ⟨h1, h2⟩)
 
+-- If two intervals have the same lower and upper bounds, they are equal
+theorem eq_of_inf_sup_eq {x y : Interval}
+    (h_inf : x.inf = y.inf)
+    (h_sup : x.sup = y.sup) :
+    x = y := by
+  cases x
+  cases y
+  cases h_inf
+  cases h_sup
+  rfl
+
 -- Implement BEq instance for Interval
 noncomputable instance : BEq Interval :=
   ⟨λ x y ↦ (x.inf == y.inf) && (x.sup == y.sup)⟩
@@ -39,18 +50,6 @@ instance : Nonempty Interval :=
     inf_leq_sup := by
       exact le_refl 0
   }⟩
-
--- Subset or equal relation for intervals
--- Let x := [xᴸ, xᵁ] and y := [yᴸ, yᵁ]
--- If yᴸ ≤ xᴸ, xᵁ ≤ yᵁ holds, then x ⊆ y
-instance : HasSubset Interval :=
-  ⟨λ x y ↦ y.inf ≤ x.inf ∧ x.sup ≤ y.sup⟩
-
--- Strict subset relation for intervals (excluding equality)
--- Let x := [xᴸ, xᵁ] and y := [yᴸ, yᵁ]
--- If yᴸ ≤ xᴸ, xᵁ ≤ yᵁ and x ≠ y holds, then x ⊂ y
-instance : HasSSubset Interval :=
-  ⟨λ x y ↦ x ⊆ y ∧ ¬(x == y)⟩
 
 -- Check if an interval is a singleton
 def is_singleton (x : Interval) : Prop :=
